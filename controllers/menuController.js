@@ -40,7 +40,9 @@ const MenuController = {
 
   update: async (req, res) => {
     try {
-      const item = await MenuModel.update(req.params.id, req.body);
+      // stock tidak boleh diupdate lewat endpoint ini — gunakan PATCH /:id/stock
+      const { stock: _ignored, ...safeBody } = req.body;
+      const item = await MenuModel.update(req.params.id, safeBody);
       res.json(item);
     } catch (e) {
       res.status(500).json({ error: 'Server error.' });

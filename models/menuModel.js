@@ -26,10 +26,10 @@ const MenuModel = {
       [name, price, category, station, stock, image]
     ).then(r => r.rows[0]),
 
-  update: (id, { name, price, category, station, stock, image, active }) =>
+  update: (id, { name, price, category, station, image, active }) =>
     pool.query(
-      'UPDATE menu SET name=$1, price=$2, category=$3, station=$4, stock=$5, image=$6, active=$7 WHERE id=$8 RETURNING *',
-      [name, price, category, station, stock, image, active ?? 1, id]
+      'UPDATE menu SET name=$1, price=$2, category=$3, station=$4, image=$5, active=$6 WHERE id=$7 RETURNING *',
+      [name, price, category, station, image, active ?? 1, id]
     ).then(r => r.rows[0]),
 
   updateStock: (id, stock) =>

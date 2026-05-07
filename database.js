@@ -75,6 +75,12 @@ async function createSchema() {
       key   TEXT PRIMARY KEY,
       value TEXT NOT NULL DEFAULT ''
     );
+
+    CREATE TABLE IF NOT EXISTS menu_categories (
+      id      SERIAL PRIMARY KEY,
+      name    TEXT NOT NULL UNIQUE,
+      station TEXT NOT NULL CHECK(station IN ('kitchen','bar'))
+    );
   `);
 }
 
@@ -94,6 +100,19 @@ async function seed() {
     await pool.query(
       'INSERT INTO users (username, password, name, role) VALUES ($1,$2,$3,$4) ON CONFLICT (username) DO NOTHING',
       [u, p, n, r]
+    );
+  }
+
+  // Seed kategori default
+  const defaultCats = [
+    ['Makanan', 'kitchen'],
+    ['Minuman', 'bar'],
+    ['Snack',   'kitchen'],
+  ];
+  for (const [name, station] of defaultCats) {
+    await pool.query(
+      'INSERT INTO menu_categories (name, station) VALUES ($1,$2) ON CONFLICT (name) DO NOTHING',
+      [name, station]
     );
   }
 
