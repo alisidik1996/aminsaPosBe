@@ -24,7 +24,7 @@ async function mapOrder(row) {
 const OrderModel = {
   findOpenByTable: async (tableId) => {
     const { rows } = await pool.query(
-      `SELECT * FROM orders WHERE table_id=$1 AND status='open' ORDER BY id DESC LIMIT 1`,
+      "SELECT * FROM orders WHERE table_id=$1 AND status='open' ORDER BY id DESC LIMIT 1",
       [tableId]
     );
     return mapOrder(rows[0] || null);
@@ -32,7 +32,7 @@ const OrderModel = {
 
   findActiveByTable: async (tableId) => {
     const { rows } = await pool.query(
-      `SELECT * FROM orders WHERE table_id=$1 AND status IN ('open','sent') ORDER BY id DESC LIMIT 1`,
+      "SELECT * FROM orders WHERE table_id=$1 AND status IN ('open','sent') ORDER BY id DESC LIMIT 1",
       [tableId]
     );
     return mapOrder(rows[0] || null);
@@ -46,7 +46,7 @@ const OrderModel = {
   create: async (tableId, kasirId, kasirName) => {
     const now = new Date().toISOString();
     const { rows } = await pool.query(
-      `INSERT INTO orders (table_id, kasir_id, kasir_name, status, created_at) VALUES ($1,$2,$3,'open',$4) RETURNING *`,
+      "INSERT INTO orders (table_id, kasir_id, kasir_name, status, created_at) VALUES ($1,$2,$3,'open',$4) RETURNING *",
       [tableId, kasirId, kasirName, now]
     );
     return mapOrder(rows[0]);
@@ -55,11 +55,11 @@ const OrderModel = {
   update: async (id, fields) => {
     const cols = [], vals = [];
     let i = 1;
-    if (fields.status !== undefined) { cols.push(`status=$${i++}`); vals.push(fields.status); }
-    if (fields.note   !== undefined) { cols.push(`note=$${i++}`);   vals.push(fields.note); }
+    if (fields.status !== undefined) { cols.push('status=$' + i++); vals.push(fields.status); }
+    if (fields.note   !== undefined) { cols.push('note=$' + i++);   vals.push(fields.note); }
     if (cols.length) {
       vals.push(id);
-      await pool.query(`UPDATE orders SET ${cols.join(',')} WHERE id=$${i}`, vals);
+      await pool.query('UPDATE orders SET ' + cols.join(',') + ' WHERE id=$' + i, vals);
     }
     if (fields.items !== undefined) {
       await pool.query('DELETE FROM order_items WHERE order_id=$1', [id]);

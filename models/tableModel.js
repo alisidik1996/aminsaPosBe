@@ -22,12 +22,12 @@ const TableModel = {
   update: async (id, fields) => {
     const cols = [], vals = [];
     let i = 1;
-    if (fields.status   !== undefined) { cols.push(`status=$${i++}`);    vals.push(fields.status); }
-    if (fields.openedAt !== undefined) { cols.push(`opened_at=$${i++}`); vals.push(fields.openedAt); }
-    if (fields.kasirId  !== undefined) { cols.push(`kasir_id=$${i++}`);  vals.push(fields.kasirId); }
+    if (fields.status   !== undefined) { cols.push('status=$' + i++);    vals.push(fields.status); }
+    if (fields.openedAt !== undefined) { cols.push('opened_at=$' + i++); vals.push(fields.openedAt); }
+    if (fields.kasirId  !== undefined) { cols.push('kasir_id=$' + i++);  vals.push(fields.kasirId); }
     if (!cols.length) return null;
     vals.push(id);
-    await pool.query(`UPDATE tables_pos SET ${cols.join(',')} WHERE id=$${i}`, vals);
+    await pool.query('UPDATE tables_pos SET ' + cols.join(',') + ' WHERE id=$' + i, vals);
     return pool.query('SELECT * FROM tables_pos WHERE id=$1', [id])
       .then(r => mapTable(r.rows[0]));
   },
