@@ -5,24 +5,12 @@ const { initDB } = require('./database');
 
 const app = express();
 
-// ── CORS ──────────────────────────────────────────────────────
-const allowedOrigins = (process.env.ALLOWED_ORIGINS || '')
-  .split(',').map(o => o.trim()).filter(Boolean);
-
-const devOrigins = [
-  'http://localhost:5500', 'http://127.0.0.1:5500',
-  'http://localhost:3000', 'http://127.0.0.1:3000',
-];
-
+// ── CORS — izinkan semua origin (bisa di-restrict setelah production stabil) ──
 app.use(cors({
-  origin: (origin, cb) => {
-    if (!origin) return cb(null, true); // curl / Postman
-    const all = [...allowedOrigins, ...devOrigins];
-    if (all.includes(origin)) return cb(null, true);
-    cb(new Error(`CORS: origin ${origin} tidak diizinkan`));
-  },
+  origin: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: false,
 }));
 
 app.use(express.json());
