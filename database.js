@@ -2,19 +2,17 @@
 require('dotenv').config();
 const { Pool } = require('pg');
 
+if (!process.env.DATABASE_URL) {
+  throw new Error('DATABASE_URL environment variable is not set');
+}
+
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false },
-});
-
-// Test koneksi saat startup
-pool.connect((err, client, release) => {
-  if (err) {
-    console.error('❌ Gagal koneksi ke database:', err.message);
-    process.exit(1);
-  }
-  console.log('✅ Terhubung ke Supabase PostgreSQL');
-  release();
+  // Batasi koneksi untuk serverless
+  max: 5,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 10000,
 });
 
 // ── SCHEMA ────────────────────────────────────────────────────
@@ -95,7 +93,6 @@ async function seed() {
 
   console.log('🌱 Seeding database...');
 
-  // Users
   const users = [
     ['kasir1', '1234',  'Budi Santoso', 'kasir'],
     ['kasir2', '1234',  'Sari Dewi',    'kasir'],
@@ -108,7 +105,6 @@ async function seed() {
     );
   }
 
-  // Menu
   const menuItems = [
     ['Nasi Goreng Spesial', 35000, 'Makanan', 'kitchen', 20, 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?w=300&h=300&fit=crop'],
     ['Mie Goreng',          28000, 'Makanan', 'kitchen', 15, 'https://images.pexels.com/photos/1279330/pexels-photo-1279330.jpeg?w=300&h=300&fit=crop'],
@@ -138,7 +134,6 @@ async function seed() {
     );
   }
 
-  // Tables
   for (let i = 1; i <= 12; i++) {
     await pool.query(
       "INSERT INTO tables_pos (name, status) VALUES ($1, 'available')",
@@ -149,10 +144,14 @@ async function seed() {
   console.log('✅ Seed selesai.');
 }
 
-// ── INIT ──────────────────────────────────────────────────────
+// ── INIT — dipanggil sekali saat server start ─────────────────
+let _initialized = false;
 async function initDB() {
+  if (_initialized) return;
   await createSchema();
   await seed();
+  _initialized = true;
+  console.log('✅ Database ready');
 }
 
 module.exports = { pool, initDB };
