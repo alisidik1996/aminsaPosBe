@@ -21,13 +21,13 @@ const VoidController = {
         const bill = await BillModel.findByOrder(order.id).catch(() => null);
         if (bill && bill.status === 'unpaid') {
           await pool.query(
-            `UPDATE bills SET status='voided', note=CONCAT(note, $1) WHERE id=$2`,
+            "UPDATE bills SET status='voided', note=COALESCE(note, '') || $1::TEXT WHERE id=$2",
             [reason ? ` [VOID: ${reason}]` : ' [VOID]', bill.id]
           );
         }
         // Void order
         await pool.query(
-          `UPDATE orders SET status='voided', note=CONCAT(note, $1) WHERE id=$2`,
+          "UPDATE orders SET status='voided', note=COALESCE(note, '') || $1::TEXT WHERE id=$2",
           [reason ? ` [VOID: ${reason}]` : ' [VOID]', order.id]
         );
       }
@@ -60,7 +60,7 @@ const VoidController = {
       if (bill.status === 'paid') return res.status(400).json({ error: 'Bill sudah dibayar, tidak bisa di-void.' });
 
       await pool.query(
-        `UPDATE bills SET status='voided', note=CONCAT(note, $1) WHERE id=$2`,
+        "UPDATE bills SET status='voided', note=COALESCE(note, '') || $1::TEXT WHERE id=$2",
         [reason ? ` [VOID: ${reason}]` : ' [VOID]', billId]
       );
       await pool.query(
