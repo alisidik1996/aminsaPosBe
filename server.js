@@ -28,11 +28,12 @@ app.use(async (req, res, next) => {
 });
 
 // ── API Routes ────────────────────────────────────────────────
-app.use('/api/auth',   require('./routes/auth'));
-app.use('/api/menu',   require('./routes/menu'));
-app.use('/api/tables', require('./routes/tables'));
-app.use('/api/orders', require('./routes/orders'));
-app.use('/api/bills',  require('./routes/bills'));
+app.use('/api/auth',     require('./routes/auth'));
+app.use('/api/menu',     require('./routes/menu'));
+app.use('/api/tables',   require('./routes/tables'));
+app.use('/api/orders',   require('./routes/orders'));
+app.use('/api/bills',    require('./routes/bills'));
+app.use('/api/settings', require('./routes/settings'));
 
 app.get('/api/health', async (req, res) => {
   res.json({ status: 'ok', time: new Date().toISOString() });

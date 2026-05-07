@@ -70,6 +70,11 @@ async function createSchema() {
       payment_method TEXT,
       payment_detail JSONB
     );
+
+    CREATE TABLE IF NOT EXISTS settings (
+      key   TEXT PRIMARY KEY,
+      value TEXT NOT NULL DEFAULT ''
+    );
   `);
 }
 
