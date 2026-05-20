@@ -5,13 +5,21 @@ const { initDB } = require('./database');
 
 const app = express();
 
-// ── CORS — izinkan semua origin (bisa di-restrict setelah production stabil) ──
-app.use(cors({
-  origin: true,
+// ── CORS — harus dipasang PALING AWAL sebelum middleware lain ──
+// Termasuk handle preflight OPTIONS secara eksplisit
+const corsOptions = {
+  origin: (origin, callback) => {
+    // Izinkan semua origin (termasuk null untuk request lokal/Postman)
+    callback(null, true);
+  },
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: false,
-}));
+};
+app.use(cors(corsOptions));
+
+// Handle preflight OPTIONS untuk semua route secara eksplisit
+app.options('*', cors(corsOptions));
 
 app.use(express.json({ limit: '5mb' }));
 
@@ -23,6 +31,7 @@ app.use(async (req, res, next) => {
     next();
   } catch (err) {
     console.error('DB init error:', err.message);
+    // Pastikan CORS header sudah ada sebelum kirim error
     res.status(500).json({ error: 'Database tidak tersedia: ' + err.message });
   }
 });
