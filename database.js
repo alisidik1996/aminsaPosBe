@@ -86,17 +86,17 @@ async function createSchema() {
     CREATE TABLE IF NOT EXISTS ingredients (
       id          SERIAL PRIMARY KEY,
       name        TEXT    NOT NULL UNIQUE,
-      unit        TEXT    NOT NULL,  -- gram, ml, pcs, etc
+      unit        TEXT    NOT NULL,
       stock       DECIMAL NOT NULL DEFAULT 0,
       min_stock   DECIMAL NOT NULL DEFAULT 0,
-      cost_per_unit DECIMAL,  -- harga per unit (opsional)
+      cost_per_unit DECIMAL,
       active      INTEGER NOT NULL DEFAULT 1
     );
 
     CREATE TABLE IF NOT EXISTS recipes (
       id          SERIAL PRIMARY KEY,
       menu_id     INTEGER NOT NULL REFERENCES menu(id) ON DELETE CASCADE,
-      yield_count INTEGER NOT NULL DEFAULT 1,  -- berapa porsi yang dihasilkan
+      yield_count INTEGER NOT NULL DEFAULT 1,
       notes       TEXT,
       UNIQUE(menu_id)
     );
@@ -105,10 +105,22 @@ async function createSchema() {
       id            SERIAL PRIMARY KEY,
       recipe_id     INTEGER NOT NULL REFERENCES recipes(id) ON DELETE CASCADE,
       ingredient_id INTEGER NOT NULL REFERENCES ingredients(id) ON DELETE CASCADE,
-      quantity      DECIMAL NOT NULL,  -- jumlah bahan per resep
-      unit          TEXT    NOT NULL,  -- harus sama dengan unit di ingredients
+      quantity      DECIMAL NOT NULL,
+      unit          TEXT    NOT NULL,
       UNIQUE(recipe_id, ingredient_id)
     );
+  `);
+
+  // ── MIGRASI — tambah kolom yang mungkin belum ada di DB lama ──
+  // ALTER TABLE ... ADD COLUMN IF NOT EXISTS aman dijalankan berulang kali
+  await pool.query(`
+    ALTER TABLE order_items   ADD COLUMN IF NOT EXISTS completed_at TEXT;
+    ALTER TABLE bills         ADD COLUMN IF NOT EXISTS order_ids      JSONB DEFAULT '[]';
+    ALTER TABLE bills         ADD COLUMN IF NOT EXISTS paid_at        TEXT;
+    ALTER TABLE bills         ADD COLUMN IF NOT EXISTS payment_method TEXT;
+    ALTER TABLE bills         ADD COLUMN IF NOT EXISTS payment_detail JSONB;
+    ALTER TABLE menu          ADD COLUMN IF NOT EXISTS image          TEXT;
+    ALTER TABLE ingredients   ADD COLUMN IF NOT EXISTS cost_per_unit  DECIMAL;
   `);
 }
 
