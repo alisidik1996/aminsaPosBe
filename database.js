@@ -183,7 +183,10 @@ async function seed() {
   console.log('✅ Seed selesai.');
 }
 
-// ── INIT — dipanggil sekali saat server start ─────────────────
+// ── INIT — dipanggil setiap request (lazy init, idempotent karena CREATE IF NOT EXISTS) ──
+// Catatan: _initialized hanya efektif di local dev (persistent process).
+// Di Vercel serverless, setiap cold start akan menjalankan createSchema() lagi,
+// tapi aman karena semua query pakai CREATE TABLE IF NOT EXISTS.
 let _initialized = false;
 async function initDB() {
   if (_initialized) return;

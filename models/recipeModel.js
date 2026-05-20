@@ -157,7 +157,8 @@ const RecipeModel = {
   },
 
   // Kurangi stock bahan ketika menu terjual
-  consumeIngredients: async (menuId, quantity = 1) => {    const recipe = await RecipeModel.findByMenuId(menuId);
+  consumeIngredients: async (menuId, quantity = 1) => {
+    const recipe = await RecipeModel.findByMenuId(menuId);
     if (!recipe) return false;
 
     const ingredients = await RecipeModel.getIngredients(recipe.id);

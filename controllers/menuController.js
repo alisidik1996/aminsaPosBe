@@ -9,6 +9,15 @@ const MenuController = {
     }
   },
 
+  // GET /menu/all — semua menu termasuk nonaktif (untuk backoffice)
+  getAllAdmin: async (req, res) => {
+    try {
+      res.json(await MenuModel.findAllIncludingInactive());
+    } catch (e) {
+      res.status(500).json({ error: 'Server error.' });
+    }
+  },
+
   getCategories: async (req, res) => {
     try {
       res.json(await MenuModel.findCategories());
