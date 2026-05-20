@@ -4,8 +4,7 @@ const BillController = {
   getByOrder: async (req, res) => {
     try {
       const bill = await BillModel.findByOrder(req.params.orderId);
-      if (!bill) return res.status(404).json({ error: 'Bill tidak ditemukan.' });
-      res.json(bill);
+      res.json(bill || null);   // null = tidak ada bill, bukan error
     } catch (e) {
       res.status(500).json({ error: 'Server error.' });
     }
@@ -14,8 +13,7 @@ const BillController = {
   getByTable: async (req, res) => {
     try {
       const bill = await BillModel.findByTable(req.params.tableId);
-      if (!bill) return res.status(404).json({ error: 'Tidak ada bill aktif.' });
-      res.json(bill);
+      res.json(bill || null);   // null = tidak ada bill aktif, bukan error
     } catch (e) {
       res.status(500).json({ error: 'Server error.' });
     }

@@ -4,8 +4,7 @@ const OrderController = {
   getOpenByTable: async (req, res) => {
     try {
       const order = await OrderModel.findOpenByTable(req.params.tableId);
-      if (!order) return res.status(404).json({ error: 'Tidak ada order aktif.' });
-      res.json(order);
+      res.json(order || null);   // null = tidak ada order open, bukan error
     } catch (e) {
       res.status(500).json({ error: 'Server error.' });
     }
@@ -14,8 +13,7 @@ const OrderController = {
   getActiveByTable: async (req, res) => {
     try {
       const order = await OrderModel.findActiveByTable(req.params.tableId);
-      if (!order) return res.status(404).json({ error: 'Tidak ada order aktif.' });
-      res.json(order);
+      res.json(order || null);   // null = tidak ada order aktif, bukan error
     } catch (e) {
       res.status(500).json({ error: 'Server error.' });
     }
