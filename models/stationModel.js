@@ -51,7 +51,7 @@ const StationModel = {
     const { rows } = await pool.query(`
       UPDATE order_items 
       SET completed_at = NULL 
-      WHERE id = $2 
+      WHERE id = $1 
       RETURNING id, order_id, menu_id, name, station, qty, completed_at
     `, [itemId]);
     return rows[0] || null;

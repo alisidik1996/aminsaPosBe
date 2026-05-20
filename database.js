@@ -82,6 +82,33 @@ async function createSchema() {
       name    TEXT NOT NULL UNIQUE,
       station TEXT NOT NULL CHECK(station IN ('kitchen','bar'))
     );
+
+    CREATE TABLE IF NOT EXISTS ingredients (
+      id          SERIAL PRIMARY KEY,
+      name        TEXT    NOT NULL UNIQUE,
+      unit        TEXT    NOT NULL,  -- gram, ml, pcs, etc
+      stock       DECIMAL NOT NULL DEFAULT 0,
+      min_stock   DECIMAL NOT NULL DEFAULT 0,
+      cost_per_unit DECIMAL,  -- harga per unit (opsional)
+      active      INTEGER NOT NULL DEFAULT 1
+    );
+
+    CREATE TABLE IF NOT EXISTS recipes (
+      id          SERIAL PRIMARY KEY,
+      menu_id     INTEGER NOT NULL REFERENCES menu(id) ON DELETE CASCADE,
+      yield_count INTEGER NOT NULL DEFAULT 1,  -- berapa porsi yang dihasilkan
+      notes       TEXT,
+      UNIQUE(menu_id)
+    );
+
+    CREATE TABLE IF NOT EXISTS recipe_ingredients (
+      id            SERIAL PRIMARY KEY,
+      recipe_id     INTEGER NOT NULL REFERENCES recipes(id) ON DELETE CASCADE,
+      ingredient_id INTEGER NOT NULL REFERENCES ingredients(id) ON DELETE CASCADE,
+      quantity      DECIMAL NOT NULL,  -- jumlah bahan per resep
+      unit          TEXT    NOT NULL,  -- harus sama dengan unit di ingredients
+      UNIQUE(recipe_id, ingredient_id)
+    );
   `);
 }
 

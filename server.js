@@ -13,7 +13,7 @@ app.use(cors({
   credentials: false,
 }));
 
-app.use(express.json());
+app.use(express.json({ limit: '5mb' }));
 
 // ── Middleware: init DB sebelum setiap request (lazy init) ────
 // Penting untuk Vercel serverless — tidak ada persistent process
@@ -36,7 +36,9 @@ app.use('/api/orders',     require('./routes/orders'));
 app.use('/api/bills',      require('./routes/bills'));
 app.use('/api/settings',   require('./routes/settings'));
 app.use('/api/void',       require('./routes/void'));
-app.use('/api/station',    require('./routes/station'));
+app.use('/api/station',      require('./routes/station'));
+app.use('/api/ingredients',  require('./routes/ingredients'));
+app.use('/api/recipes',      require('./routes/recipes'));
 
 app.get('/api/health', async (req, res) => {
   res.json({ status: 'ok', time: new Date().toISOString() });
