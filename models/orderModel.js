@@ -8,6 +8,7 @@ async function getItems(orderId) {
   return rows.map(i => ({
     id: i.menu_id, name: i.name, price: i.price,
     station: i.station, qty: i.qty, image: i.image || '',
+    completed_at: i.completed_at || null,
   }));
 }
 

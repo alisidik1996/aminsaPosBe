@@ -49,7 +49,8 @@ async function createSchema() {
       name     TEXT    NOT NULL,
       price    INTEGER NOT NULL,
       station  TEXT    NOT NULL,
-      qty      INTEGER NOT NULL DEFAULT 1
+      qty      INTEGER NOT NULL DEFAULT 1,
+      completed_at TEXT
     );
 
     CREATE TABLE IF NOT EXISTS bills (

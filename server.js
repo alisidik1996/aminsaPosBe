@@ -36,6 +36,7 @@ app.use('/api/orders',     require('./routes/orders'));
 app.use('/api/bills',      require('./routes/bills'));
 app.use('/api/settings',   require('./routes/settings'));
 app.use('/api/void',       require('./routes/void'));
+app.use('/api/station',    require('./routes/station'));
 
 app.get('/api/health', async (req, res) => {
   res.json({ status: 'ok', time: new Date().toISOString() });
