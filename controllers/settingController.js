@@ -14,7 +14,7 @@ const SettingController = {
     try {
       const allowed = [
         'merchant_name', 'merchant_address', 'merchant_phone',
-        'merchant_social', 'receipt_footer',
+        'merchant_social', 'receipt_footer', 'merchant_logo',
       ];
       const data = {};
       for (const key of allowed) {
