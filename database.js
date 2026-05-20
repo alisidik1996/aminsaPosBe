@@ -196,16 +196,27 @@ async function seed() {
 }
 
 // ── INIT — dipanggil setiap request (lazy init, idempotent karena CREATE IF NOT EXISTS) ──
-// Catatan: _initialized hanya efektif di local dev (persistent process).
-// Di Vercel serverless, setiap cold start akan menjalankan createSchema() lagi,
-// tapi aman karena semua query pakai CREATE TABLE IF NOT EXISTS.
 let _initialized = false;
 async function initDB() {
   if (_initialized) return;
   await createSchema();
   await seed();
+  await cleanupStaleOrders();
   _initialized = true;
   console.log('✅ Database ready');
+}
+
+// ── CLEANUP — tutup order 'sent' yang billnya sudah paid/voided/tidak ada ──
+async function cleanupStaleOrders() {
+  await pool.query(`
+    UPDATE orders SET status = 'closed'
+    WHERE status = 'sent'
+      AND NOT EXISTS (
+        SELECT 1 FROM bills b
+        WHERE b.status = 'unpaid'
+          AND (b.order_id = orders.id OR b.order_ids @> to_jsonb(orders.id))
+      )
+  `);
 }
 
 module.exports = { pool, initDB };

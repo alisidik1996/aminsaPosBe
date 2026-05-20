@@ -2,6 +2,7 @@ const pool = require('../config/db');
 
 const StationModel = {
   // Ambil semua order items untuk station tertentu yang belum selesai
+  // Hanya order yang billnya masih unpaid (aktif)
   getPendingItems: async (station) => {
     const { rows } = await pool.query(`
       SELECT 
@@ -14,12 +15,18 @@ const StationModel = {
       WHERE oi.station = $1 
         AND o.status = 'sent'
         AND oi.completed_at IS NULL
+        AND EXISTS (
+          SELECT 1 FROM bills b
+          WHERE b.status = 'unpaid'
+            AND (b.order_id = o.id OR b.order_ids @> to_jsonb(o.id))
+        )
       ORDER BY o.created_at ASC, oi.id ASC
     `, [station]);
     return rows;
   },
 
-  // Ambil semua order items untuk station tertentu (termasuk yang sudah selesai)
+  // Ambil semua order items untuk station tertentu (pending + selesai)
+  // Hanya order yang billnya masih unpaid (aktif)
   getAllItems: async (station) => {
     const { rows } = await pool.query(`
       SELECT 
@@ -29,7 +36,13 @@ const StationModel = {
       FROM order_items oi
       JOIN orders o ON o.id = oi.order_id
       JOIN tables_pos t ON t.id = o.table_id
-      WHERE oi.station = $1 AND o.status = 'sent'
+      WHERE oi.station = $1
+        AND o.status = 'sent'
+        AND EXISTS (
+          SELECT 1 FROM bills b
+          WHERE b.status = 'unpaid'
+            AND (b.order_id = o.id OR b.order_ids @> to_jsonb(o.id))
+        )
       ORDER BY oi.completed_at IS NULL DESC, o.created_at ASC, oi.id ASC
     `, [station]);
     return rows;
