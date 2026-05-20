@@ -28,6 +28,20 @@ const TableController = {
       res.status(500).json({ error: 'Server error.' });
     }
   },
+
+  switchTable: async (req, res) => {
+    try {
+      const { fromId, toId } = req.body;
+      if (!fromId || !toId)
+        return res.status(400).json({ error: 'fromId dan toId wajib diisi.' });
+      if (fromId === toId)
+        return res.status(400).json({ error: 'Meja asal dan tujuan tidak boleh sama.' });
+      const result = await TableModel.switchTable(fromId, toId);
+      res.json(result);
+    } catch (e) {
+      res.status(400).json({ error: e.message || 'Gagal pindah meja.' });
+    }
+  },
 };
 
 module.exports = TableController;
