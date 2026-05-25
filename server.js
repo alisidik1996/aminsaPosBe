@@ -1,7 +1,7 @@
 require('dotenv').config();
 const express    = require('express');
 const cors       = require('cors');
-const { initDB, seedIngredientsAndRecipes } = require('./database');
+const { initDB } = require('./database');
 
 const app = express();
 
@@ -52,17 +52,6 @@ app.use('/api/stock',        require('./routes/stock'));
 
 app.get('/api/health', async (req, res) => {
   res.json({ status: 'ok', time: new Date().toISOString() });
-});
-
-// ── Seed endpoint — inject bahan baku & resep ke DB yang sudah ada ──
-app.post('/api/admin/seed-stock', async (req, res) => {
-  try {
-    await seedIngredientsAndRecipes();
-    res.json({ success: true, message: 'Seed bahan baku & resep selesai.' });
-  } catch (e) {
-    console.error(e);
-    res.status(500).json({ error: e.message });
-  }
 });
 
 app.use('/api', (req, res) => {
