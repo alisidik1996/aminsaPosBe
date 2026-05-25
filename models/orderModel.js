@@ -74,6 +74,80 @@ const OrderModel = {
     const { rows } = await pool.query('SELECT * FROM orders WHERE id=$1', [id]);
     return mapOrder(rows[0]);
   },
+
+  /**
+   * Kirim order secara atomik:
+   * 1. Simpan items ke order_items
+   * 2. Update status order → 'sent'
+   * 3. Kurangi stok menu dengan row-level lock (FOR UPDATE)
+   * 4. Validasi stok tidak minus — jika kurang, ROLLBACK dan lempar error
+   * Semua dalam satu transaksi PostgreSQL.
+   */
+  sendAtomically: async (id, items, note) => {
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+
+      // Cek order masih berstatus 'open'
+      const { rows: orderRows } = await client.query(
+        "SELECT * FROM orders WHERE id=$1 AND status='open' FOR UPDATE",
+        [id]
+      );
+      if (!orderRows[0]) {
+        throw new Error('Order tidak ditemukan atau sudah dikirim sebelumnya.');
+      }
+
+      // Simpan items (replace semua)
+      await client.query('DELETE FROM order_items WHERE order_id=$1', [id]);
+      for (const item of items) {
+        await client.query(
+          'INSERT INTO order_items (order_id, menu_id, name, price, station, qty) VALUES ($1,$2,$3,$4,$5,$6)',
+          [id, item.id, item.name, item.price, item.station, item.qty]
+        );
+      }
+
+      // Kurangi stok dengan row-level lock per menu item
+      for (const item of items) {
+        // Lock baris menu ini agar kasir lain tidak bisa baca stok lama
+        const { rows: menuRows } = await client.query(
+          'SELECT id, name, stock FROM menu WHERE id=$1 FOR UPDATE',
+          [item.id]
+        );
+        if (!menuRows[0]) {
+          throw new Error(`Menu "${item.name}" tidak ditemukan.`);
+        }
+        const currentStock = menuRows[0].stock;
+        const newStock = currentStock - item.qty;
+        if (newStock < 0) {
+          throw new Error(
+            `Stok "${menuRows[0].name}" tidak cukup. ` +
+            `Tersedia: ${currentStock}, dibutuhkan: ${item.qty}.`
+          );
+        }
+        await client.query(
+          'UPDATE menu SET stock=$1 WHERE id=$2',
+          [newStock, item.id]
+        );
+      }
+
+      // Update status order dan note
+      const noteVal = note !== undefined ? note : '';
+      await client.query(
+        "UPDATE orders SET status='sent', note=$1 WHERE id=$2",
+        [noteVal, id]
+      );
+
+      await client.query('COMMIT');
+
+      const { rows } = await pool.query('SELECT * FROM orders WHERE id=$1', [id]);
+      return mapOrder(rows[0]);
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
+  },
 };
 
 module.exports = OrderModel;

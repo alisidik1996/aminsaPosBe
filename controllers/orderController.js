@@ -48,6 +48,26 @@ const OrderController = {
       res.status(500).json({ error: 'Server error.' });
     }
   },
+
+  /**
+   * POST /api/orders/:id/send
+   * Kirim order secara atomik — update status, simpan items, kurangi stok
+   * dalam satu transaksi PostgreSQL. Mencegah race condition antar kasir.
+   */
+  send: async (req, res) => {
+    try {
+      const { items, note } = req.body;
+      if (!items || !Array.isArray(items) || items.length === 0) {
+        return res.status(400).json({ error: 'items wajib diisi dan tidak boleh kosong.' });
+      }
+      const order = await OrderModel.sendAtomically(req.params.id, items, note);
+      res.json(order);
+    } catch (e) {
+      console.error(e);
+      // Kembalikan pesan error yang informatif (misal stok tidak cukup)
+      res.status(400).json({ error: e.message || 'Gagal mengirim order.' });
+    }
+  },
 };
 
 module.exports = OrderController;
