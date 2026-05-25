@@ -48,6 +48,7 @@ app.use('/api/void',       require('./routes/void'));
 app.use('/api/station',      require('./routes/station'));
 app.use('/api/ingredients',  require('./routes/ingredients'));
 app.use('/api/recipes',      require('./routes/recipes'));
+app.use('/api/stock',        require('./routes/stock'));
 
 app.get('/api/health', async (req, res) => {
   res.json({ status: 'ok', time: new Date().toISOString() });

@@ -1,4 +1,5 @@
-const pool = require('../config/db');
+const pool        = require('../config/db');
+const RecipeModel = require('./recipeModel');
 
 async function getItems(orderId) {
   const { rows } = await pool.query(
@@ -140,6 +141,60 @@ const OrderModel = {
           'UPDATE menu SET stock=$1 WHERE id=$2',
           [newStock, item.id]
         );
+
+        // Kurangi stok bahan baku jika menu punya resep
+        const { rows: recipeRows } = await client.query(
+          'SELECT id FROM recipes WHERE menu_id=$1',
+          [item.id]
+        );
+        if (recipeRows[0]) {
+          const recipeId = recipeRows[0].id;
+          const { rows: ingRows } = await client.query(`
+            SELECT ri.ingredient_id, ri.quantity, i.name AS ingredient_name,
+                   i.stock AS ingredient_stock, i.unit
+            FROM recipe_ingredients ri
+            JOIN ingredients i ON i.id = ri.ingredient_id
+            WHERE ri.recipe_id = $1
+          `, [recipeId]);
+
+          for (const ing of ingRows) {
+            const needed = ing.quantity * item.qty;
+            // Lock baris ingredient
+            const { rows: ingLocked } = await client.query(
+              'SELECT stock FROM ingredients WHERE id=$1 FOR UPDATE',
+              [ing.ingredient_id]
+            );
+            if (!ingLocked[0]) continue;
+            const ingNewStock = Math.max(0, ingLocked[0].stock - needed);
+            await client.query(
+              'UPDATE ingredients SET stock=$1 WHERE id=$2',
+              [ingNewStock, ing.ingredient_id]
+            );
+          }
+
+          // Recalculate stok menu berdasarkan sisa bahan (untuk konsistensi)
+          // Dilakukan setelah semua bahan dikurangi
+          const { rows: allIngs } = await client.query(`
+            SELECT ri.quantity, i.stock AS ingredient_stock
+            FROM recipe_ingredients ri
+            JOIN ingredients i ON i.id = ri.ingredient_id
+            WHERE ri.recipe_id = $1
+          `, [recipeId]);
+
+          if (allIngs.length > 0) {
+            const { rows: recipeInfo } = await client.query(
+              'SELECT yield_count FROM recipes WHERE id=$1', [recipeId]
+            );
+            const yieldCount = recipeInfo[0]?.yield_count || 1;
+            let minPortions = Infinity;
+            for (const ing of allIngs) {
+              const portions = Math.floor(ing.ingredient_stock / ing.quantity);
+              if (portions < minPortions) minPortions = portions;
+            }
+            const recalcStock = minPortions === Infinity ? 0 : minPortions * yieldCount;
+            await client.query('UPDATE menu SET stock=$1 WHERE id=$2', [recalcStock, item.id]);
+          }
+        }
       }
 
       // Update status order dan note
