@@ -97,12 +97,24 @@ const OrderModel = {
         throw new Error('Order tidak ditemukan atau sudah dikirim sebelumnya.');
       }
 
-      // Simpan items (replace semua)
+      // Simpan items — harga diambil dari DB, BUKAN dari frontend
       await client.query('DELETE FROM order_items WHERE order_id=$1', [id]);
       for (const item of items) {
+        // Re-fetch harga resmi dari tabel menu
+        const { rows: priceRows } = await client.query(
+          'SELECT price, name, station FROM menu WHERE id=$1',
+          [item.id]
+        );
+        if (!priceRows[0]) {
+          throw new Error(`Menu dengan ID ${item.id} tidak ditemukan.`);
+        }
+        const trustedPrice   = priceRows[0].price;    // harga dari DB
+        const trustedName    = priceRows[0].name;     // nama dari DB
+        const trustedStation = priceRows[0].station;  // station dari DB
+
         await client.query(
           'INSERT INTO order_items (order_id, menu_id, name, price, station, qty) VALUES ($1,$2,$3,$4,$5,$6)',
-          [id, item.id, item.name, item.price, item.station, item.qty]
+          [id, item.id, trustedName, trustedPrice, trustedStation, item.qty]
         );
       }
 

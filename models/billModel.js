@@ -59,13 +59,37 @@ const BillModel = {
     return mapBill(rows[0] || null);
   },
 
-  create: async ({ orderId, tableId, tableName, items, note, kasirId, kasirName }) => {
-    const subtotal = items.reduce((s, i) => s + i.price * i.qty, 0);
+  create: async ({ orderId, tableId, tableName, note, kasirId, kasirName }) => {
+    // Ambil items langsung dari order_items JOIN menu — TIDAK percaya harga dari frontend
+    const { rows: itemRows } = await pool.query(`
+      SELECT oi.menu_id, oi.name, oi.qty, oi.station,
+             m.price AS price,   -- harga resmi dari DB
+             m.image
+      FROM order_items oi
+      JOIN menu m ON m.id = oi.menu_id
+      WHERE oi.order_id = $1
+      ORDER BY oi.id
+    `, [orderId]);
+
+    if (!itemRows.length) {
+      throw new Error('Order tidak memiliki item.');
+    }
+
+    const subtotal = itemRows.reduce((s, i) => s + i.price * i.qty, 0);
     const tax      = Math.round(subtotal * 0.1);
     const now      = new Date().toISOString();
+
+    // Update harga di order_items sesuai harga DB (koreksi jika ada manipulasi)
+    for (const i of itemRows) {
+      await pool.query(
+        'UPDATE order_items SET price=$1 WHERE order_id=$2 AND menu_id=$3',
+        [i.price, orderId, i.menu_id]
+      );
+    }
+
     const { rows } = await pool.query(
       "INSERT INTO bills (order_id, order_ids, table_id, table_name, subtotal, tax, total, note, status, kasir_id, kasir_name, created_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,'unpaid',$9,$10,$11) RETURNING *",
-      [orderId, JSON.stringify([orderId]), tableId, tableName, subtotal, tax, subtotal + tax, note, kasirId, kasirName, now]
+      [orderId, JSON.stringify([orderId]), tableId, tableName, subtotal, tax, subtotal + tax, note || '', kasirId, kasirName, now]
     );
     return mapBill(rows[0]);
   },

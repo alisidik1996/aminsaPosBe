@@ -31,13 +31,13 @@ const BillController = {
 
   create: async (req, res) => {
     try {
-      const { orderId, tableId, tableName, items, note = '', kasirId, kasirName } = req.body;
-      if (!orderId || !tableId || !tableName || !items || !kasirId || !kasirName)
-        return res.status(400).json({ error: 'Field wajib: orderId, tableId, tableName, items, kasirId, kasirName.' });
-      res.status(201).json(await BillModel.create({ orderId, tableId, tableName, items, note, kasirId, kasirName }));
+      const { orderId, tableId, tableName, note = '', kasirId, kasirName } = req.body;
+      if (!orderId || !tableId || !tableName || !kasirId || !kasirName)
+        return res.status(400).json({ error: 'Field wajib: orderId, tableId, tableName, kasirId, kasirName.' });
+      res.status(201).json(await BillModel.create({ orderId, tableId, tableName, note, kasirId, kasirName }));
     } catch (e) {
       console.error(e);
-      res.status(500).json({ error: 'Server error.' });
+      res.status(500).json({ error: e.message || 'Server error.' });
     }
   },
 
